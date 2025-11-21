@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neural Link Widget</title>
+    <link href="https://fonts.googleapis.com/css2?family=DungGeunMo&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0..1,0" />
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        :root {
+            /* Default Theme: Windows 95 */
+            --bg-color: #c0c0c0;
+            --window-bg: #ffffff;
+            --text-color: #000000;
+            --accent-color: #000080;
+            --accent-text: #ffffff;
+            --border-light: #ffffff;
+            --border-dark: #808080;
+            --font-family: 'DungGeunMo', sans-serif;
+            --icon-fill: 0; /* 아이콘 채움 상태 (기본 0) */
+        }
+
+        /* Theme Variables */
+        [data-theme="cozy-peach"] { --bg-color: #ffdab9; --window-bg: #fff5ee; --text-color: #8b4513; --accent-color: #ff7f50; --accent-text: #fff; --border-light: #ffe4b5; --border-dark: #cd853f; }
+        [data-theme="dive-blue"] { --bg-color: #191970; --window-bg: #e6e6fa; --text-color: #000080; --accent-color: #ffd700; --accent-text: #000; --border-light: #4169e1; --border-dark: #000033; }
+        [data-theme="pixel-plant"] { --bg-color: #556b2f; --window-bg: #f0fff0; --text-color: #006400; --accent-color: #8fbc8f; --accent-text: #003300; --border-light: #9acd32; --border-dark: #2f4f4f; }
+        [data-theme="morning-cream"] { --bg-color: #f5f5dc; --window-bg: #fffaf0; --text-color: #483d8b; --accent-color: #9370db; --accent-text: #fff; --border-light: #fff8dc; --border-dark: #bdb76b; }
+        [data-theme="midnight-chill"] { --bg-color: #2f4f4f; --window-bg: #000000; --text-color: #00ff00; --accent-color: #48d1cc; --accent-text: #000; --border-light: #66cdaa; --border-dark: #000; }
+
+        body {
+            background-color: transparent;
+            font-family: var(--font-family);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .widget-container {
+            width: 300px;
+            background-color: var(--bg-color);
+            border: 2px solid var(--border-light);
+            border-right-color: var(--border-dark);
+            border-bottom-color: var(--border-dark);
+            box-shadow: 4px 4px 0px rgba(0,0,0,0.2);
+            padding: 4px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .title-bar {
+            background-color: var(--accent-color);
+            color: var(--accent-text);
+            padding: 4px 8px;
+            font-size: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+        }
+
+        .theme-btn {
+            background: var(--bg-color);
+            border: 1px solid var(--border-light);
+            border-right-color: var(--border-dark);
+            border-bottom-color: var(--border-dark);
+            color: var(--text-color);
+            cursor: pointer;
+            font-size: 12px;
+            font-family: var(--font-family);
+            padding: 0 6px;
+        }
+        
+        .theme-btn:active { transform:translate(1px,1px); }
+
+        .input-area {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 8px;
+        }
+
+        input[type="text"] {
+            flex-grow: 1;
+            border: 2px solid var(--border-dark);
+            border-right-color: var(--border-light);
+            border-bottom-color: var(--border-light);
+            padding: 4px;
+            font-family: var(--font-family);
+            font-size: 14px;
+            background: var(--window-bg);
+            color: var(--text-color);
+            outline: none;
+        }
+
+        .action-btn {
+            width: 30px;
+            background: var(--bg-color);
+            border: 2px solid var(--border-light);
+            border-right-color: var(--border-dark);
+            border-bottom-color: var(--border-dark);
+            cursor: pointer;
+            font-family: var(--font-family);
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .action-btn:active { border-style: inset; }
+
+        #starBtn { color: #ffa500; font-weight: bold; }
+
+        ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            background-color: var(--window-bg);
+            border: 2px solid var(--border-dark);
+            border-right-color: var(--border-light);
+            border-bottom-color: var(--border-light);
+            height: 220px;
+            overflow-y: auto;
+        }
+
+        li {
+            padding: 8px 8px;
+            border-bottom: 1px dotted var(--border-dark);
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            color: var(--text-color);
+            font-size: 14px;
+            user-select: none;
+            transition: background 0.1s;
+        }
+
+        li:hover {
+            background-color: rgba(0,0,0,0.05);
+        }
+
+        /* 아이콘 스타일 */
+        .task-icon {
+            font-size: 18px;
+            margin-right: 8px;
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            color: var(--text-color);
+            transition: font-variation-settings 0.2s, color 0.2s;
+        }
+
+        /* 중요 할 일 */
+        li.priority .task-icon {
+            color: #ffa500;
+            font-variation-settings: 'FILL' 1; /* 별은 항상 채워짐 */
+        }
+        
+        li.priority {
+            font-weight: bold;
+            background-color: rgba(255, 215, 0, 0.1);
+        }
+
+        /* 완료된 할 일 */
+        li.completed {
+            text-decoration: line-through;
+            color: #888;
+            opacity: 0.6;
+        }
+
+        li.completed .task-icon {
+            /* 완료되면 아이콘이 채워지고(FILL 1), 테마 포인트 색상으로 변함 */
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            color: var(--accent-color);
+        }
+
+        /* 스크롤바 */
+        ::-webkit-scrollbar { width: 12px; }
+        ::-webkit-scrollbar-track { background: var(--bg-color); }
+        ::-webkit-scrollbar-thumb { 
+            background: var(--bg-color); 
+            border: 1px solid var(--window-bg);
+            box-shadow: inset 1px 1px 0 var(--border-light), inset -1px -1px 0 var(--border-dark);
+        }
+        
+        .empty-msg {
+            text-align: center;
+            margin-top: 80px;
+            color: #888;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="widget-container">
+    <div class="title-bar">
+        <span id="clock">TODO.EXE</span>
+        <button class="theme-btn" onclick="cycleTheme()" title="Change Theme">🎨</button>
+    </div>
+
+    <div class="input-area">
+        <input type="text" id="taskInput" placeholder="할 일을 입력하세요..." maxlength="25">
+        <button class="action-btn" id="starBtn" onclick="addTask(true)" title="중요 할 일 (★)">★</button>
+        <button class="action-btn" onclick="addTask(false)" title="추가">+</button>
+    </div>
+
+    <ul id="taskList">
+        <div class="empty-msg">Loading...</div>
+    </ul>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+    import { getDatabase, ref, push, onValue, update, set, remove } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
+
+    // ✅ 여기에 이전에 복사해둔 Firebase Config를 꼭 다시 넣어주세요!
+    const firebaseConfig = {
+        apiKey: "AIzaSyDNxluTeBdf7QmtgtCawyYgXbJLh5CiB6o",
+        authDomain: "notion-todo-retrokitsch.firebaseapp.com",
+        databaseURL: "https://notion-todo-retrokitsch-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "notion-todo-retrokitsch",
+        storageBucket: "notion-todo-retrokitsch.firebasestorage.app",
+        messagingSenderId: "398595665274",
+        appId: "1:398595665274:web:67f63764223d1ae447bac3",
+        measurementId: "G-5ZXBQ1DCQ2"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const taskInput = document.getElementById('taskInput');
+    const taskList = document.getElementById('taskList');
+    const clock = document.getElementById('clock');
+    
+    // 테마별 아이콘 정의 (Material Symbols 이름)
+    const themeIcons = {
+        'win95': 'check_box_outline_blank',     // 윈도우: 체크박스
+        'cozy-peach': 'favorite',               // 피치: 하트
+        'dive-blue': 'stars',                   // 블루: 별
+        'pixel-plant': 'eco',                   // 식물: 잎사귀
+        'morning-cream': 'wb_sunny',            // 모닝: 해
+        'midnight-chill': 'bedtime'             // 미드나잇: 달
+    };
+
+    const themes = ['win95', 'cozy-peach', 'dive-blue', 'pixel-plant', 'morning-cream', 'midnight-chill'];
+    let currentThemeIndex = 0;
+
+    // 1. Add Task
+    window.addTask = (isPriority) => {
+        const text = taskInput.value.trim();
+        if (!text) return;
+        
+        // 현재 개수 체크 (UI상)
+        if (taskList.childElementCount >= 8) {
+             // alert 생략 (레트로 감성 저해) - 그냥 소리로 거부 반응
+             return;
+        }
+
+        const newTaskRef = push(ref(db, 'tasks'));
+        set(newTaskRef, {
+            text: text,
+            priority: isPriority,
+            completed: false,
+            timestamp: Date.now()
+        });
+
+        taskInput.value = "";
+        playSound('https://actions.google.com/sounds/v1/cartoon/pop.ogg');
+    };
+
+    taskInput.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") window.addTask(false);
+    });
+
+    // 2. Theme Cycle
+    window.cycleTheme = () => {
+        currentThemeIndex = (currentThemeIndex + 1) % themes.length;
+        applyTheme();
+    };
+
+    function applyTheme() {
+        const themeName = themes[currentThemeIndex];
+        document.body.setAttribute('data-theme', themeName);
+        localStorage.setItem('neuralTheme', currentThemeIndex);
+        
+        // 테마가 바뀌면 리스트의 아이콘도 갱신하기 위해 강제 리렌더링은 하지 않음 (CSS 변수로 처리 불가한 부분이라 JS 재호출 필요할 수 있음. 여기선 새로고침 시 적용 or 리렌더링 유도)
+        // 간단하게 페이지 새로고침 없이 아이콘만 업데이트:
+        updateIconsOnly();
+    }
+
+    function updateIconsOnly() {
+        // 현재 테마의 아이콘 이름 가져오기
+        const themeName = themes[currentThemeIndex];
+        const iconName = themeIcons[themeName];
+        
+        // 모든 리스트 아이템의 아이콘 텍스트 변경
+        document.querySelectorAll('.task-icon').forEach(iconSpan => {
+            // 중요(별) 항목은 아이콘 고정, 일반 항목만 테마 아이콘 적용
+            if (!iconSpan.parentElement.classList.contains('priority')) {
+                iconSpan.textContent = iconName;
+            }
+        });
+    }
+
+    // Load Theme
+    const savedTheme = localStorage.getItem('neuralTheme');
+    if(savedTheme) {
+        currentThemeIndex = parseInt(savedTheme);
+    }
+    applyTheme(); // 초기 적용
+
+    // 3. Render Tasks
+    onValue(ref(db, 'tasks'), (snapshot) => {
+        taskList.innerHTML = "";
+        const data = snapshot.val();
+        
+        if (!data) {
+            taskList.innerHTML = '<div class="empty-msg">할 일이 없습니다.<br>Zzz...</div>';
+            return;
+        }
+
+        const tasksArray = Object.entries(data).map(([key, value]) => ({ id: key, ...value }));
+        
+        // Sort
+        tasksArray.sort((a, b) => {
+            if (a.completed !== b.completed) return a.completed ? 1 : -1;
+            if (a.priority !== b.priority) return a.priority ? -1 : 1;
+            return b.timestamp - a.timestamp;
+        });
+
+        let completedCount = 0;
+
+        tasksArray.forEach(task => {
+            if(task.completed) completedCount++;
+
+            const li = document.createElement('li');
+            if (task.priority) li.classList.add('priority');
+            if (task.completed) li.classList.add('completed');
+            
+            // 아이콘 결정
+            const currentTheme = themes[currentThemeIndex];
+            const iconName = task.priority ? 'stars' : themeIcons[currentTheme]; // 중요하면 무조건 별, 아니면 테마 아이콘
+
+            li.innerHTML = `<span class="material-symbols-outlined task-icon">${iconName}</span> ${task.text}`;
+
+            li.onclick = () => {
+                update(ref(db, 'tasks/' + task.id), {
+                    completed: !task.completed,
+                    completedAt: !task.completed ? Date.now() : null
+                });
+                
+                if(!task.completed) {
+                    playSound('https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg');
+                }
+            };
+            
+            // Right click delete
+            li.oncontextmenu = (e) => {
+                e.preventDefault();
+                if(confirm("삭제하시겠습니까?")) remove(ref(db, 'tasks/' + task.id));
+            };
+
+            taskList.appendChild(li);
+        });
+
+        // 🎉 All Clear Celebration 🎉
+        if (tasksArray.length > 0 && completedCount === tasksArray.length) {
+            triggerConfetti();
+        }
+    });
+
+    // 4. Clock
+    setInterval(() => {
+        const now = new Date();
+        clock.innerText = "TODO " + now.toLocaleTimeString('en-US', {hour12:false, hour:'2-digit', minute:'2-digit'});
+    }, 1000);
+
+    function playSound(url) {
+        const audio = new Audio(url);
+        audio.volume = 0.5;
+        audio.play().catch(e => {});
+    }
+
+    // 🎆 Confetti Function
+    function triggerConfetti() {
+        // 현재 테마의 강조색(Accent Color) 가져오기
+        const style = getComputedStyle(document.body);
+        const accent = style.getPropertyValue('--accent-color').trim();
+        const text = style.getPropertyValue('--text-color').trim();
+
+        const count = 200;
+        const defaults = {
+            origin: { y: 0.7 },
+            colors: [accent, text, '#ffffff'] // 테마 색상으로 폭죽 터뜨림
+        };
+
+        function fire(particleRatio, opts) {
+            confetti(Object.assign({}, defaults, opts, {
+                particleCount: Math.floor(count * particleRatio)
+            }));
+        }
+
+        fire(0.25, { spread: 26, startVelocity: 55 });
+        fire(0.2, { spread: 60 });
+        fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
+        fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
+        fire(0.1, { spread: 120, startVelocity: 45 });
+    }
+</script>
+</body>
+</html>
