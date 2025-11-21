@@ -9,7 +9,7 @@ from firebase_admin import db
 # --- 설정 ---
 # GitHub Secrets에서 가져올 값들
 NOTION_TOKEN = os.environ['NOTION_KEY']
-NOTION_DB_ID = "여기에_노션_데이터베이스_ID를_넣으세요" # Backlog용 DB ID
+NOTION_DB_ID = "2b28c5bdbe91803caa65ed21de8fc4e5" # Backlog용 DB ID
 FIREBASE_CREDENTIALS = os.environ['FIREBASE_ADMIN_JSON'] # 관리자 열쇠 내용
 
 # --- 1. Firebase 접속 (관리자 모드) ---
